@@ -235,7 +235,7 @@ http_custom_response *http_response_build(int status_code)
 {
     http_custom_response *new_response = (http_custom_response *) calloc(1, sizeof(*new_response));
     new_response->http_header = (char *) malloc(MAX_HTTP_HDR_SIZE);
-    new_response->http_html_content = NULL;
+    new_response->body_content = NULL;
     http_status_tuple * tuple;
     tuple = create_response_tuple(status_code);
     
@@ -253,7 +253,6 @@ http_custom_response *http_response_build(int status_code)
                                                             "Connection: closed\r\n" // notify the clients to close connection
                                                             "\r\n", tuple->status_code, tuple->status_name, date_buf);
     new_response->header_size = strlen(new_response->http_header);
-    new_response->content_size = 0;
     if(retVal < 0)
     {
         http_response_free(new_response);
@@ -261,13 +260,14 @@ http_custom_response *http_response_build(int status_code)
     free(tuple);
     return new_response;
 }
+
 void http_response_free(http_custom_response * response)
 {
     if((response)->http_header)
         free((response)->http_header);
 
-    if((response)->http_html_content)
-        free((response)->http_html_content);
+    if((response)->body_content)
+        file_free(response->body_content);
 
     if(response){
         free(response);

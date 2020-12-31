@@ -2,9 +2,12 @@
 #define _NET_H_
 
 #include<stdio.h>
+#include<stdlib.h>
+#include <sys/socket.h>
 
 #include"file.h"
 #include"constants.h"
+#include"mime.h"
 
 int send_all_to_socket(int sock_fd, char *buf, int buf_len, int *send_len);
 

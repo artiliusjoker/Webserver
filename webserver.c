@@ -1,0 +1,136 @@
+#include"webserver.h"
+int listening_fd;
+
+static void SIGINT_parent(int signum)
+{
+    pid_t wait_retVal;
+    int status;
+    fprintf(stdout, "\nShutting down all processes\n");
+
+    int killall = 0 - getpid();
+    kill(killall, SIGINT);
+
+    while ((wait_retVal = wait(&status)) > 0);
+    fprintf(stdout, "Program terminated by SIGUSR2\n");
+    
+    close(listening_fd);
+    
+    exit(EXIT_SUCCESS);
+}
+
+static void SIGINT_child(int signum)
+{
+    fprintf(stdout, "Shut down process %d\n", getpid());
+    exit(EXIT_SUCCESS);
+}
+
+static void handle_client(int client_fd)
+{
+    int server_fd, retVal;
+    http_request *client_request = NULL;
+    char * request_in_string;
+
+    // Read client's request
+    client_request = http_read_request(client_fd, &request_in_string);
+    if(client_request == NULL)
+    {
+        send_error_response(BAD_REQUEST, client_fd);
+
+        fprintf(stderr, "Handling : cannot read client's request ! \n");
+        return;
+    }
+    http_request_free(client_request);
+    free(request_in_string);
+}
+
+static void start_server(char *port)
+{
+    signal(SIGINT, SIGINT_parent);
+    struct addrinfo result, *list;
+    int fd;
+
+    // Allocate mem for result
+    memset(&result, 0, sizeof(result));
+    result.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+    result.ai_socktype = SOCK_STREAM; /* Datagram socket */
+    result.ai_flags = AI_PASSIVE;
+
+    int retVal = getaddrinfo(NULL, port, &result, &list);
+    if (retVal != 0) 
+    {
+        fprintf(stderr, "Getaddrinfo: %s\n", gai_strerror(retVal));
+        exit(EXIT_FAILURE);
+    }
+    struct addrinfo *iterator = list;
+    if(iterator == NULL)
+    {
+        fprintf(stderr, "Server: cannot create socket fd !\n");
+        return;
+    }
+    // Go through the list to create socket fd
+    for(iterator; iterator != NULL; iterator = iterator->ai_next)
+    {
+        if((fd = socket(iterator->ai_family, iterator->ai_socktype,
+                        iterator->ai_protocol)) < 0)
+        {
+            continue;
+        }
+        if(bind(fd, iterator->ai_addr, iterator->ai_addrlen) < 0)
+        {
+            close(fd);
+            continue;
+        }
+        // Prepare for connections
+        if(listen(fd, MAX_REQUESTS_QUEUE_SIZE) < 0)
+        {
+            close(fd);
+            continue;
+        }
+        break;
+    }
+    if(iterator == NULL)
+    {
+        fprintf(stderr, "Server: cannot create socket fd !\n");
+        freeaddrinfo(list);
+        return;
+    }
+    freeaddrinfo(list);
+    int accept_fd;
+    // Fork process's child to handle clients
+    printf("Proxy server is listening on port %s\n", port);
+    // Program loop
+    while(1)
+    {
+        accept_fd = accept(fd, NULL, NULL);
+        if(accept_fd == -1)
+        {
+            perror("Server: ");
+            continue;
+        }
+        printf("Received connection\n");
+        // Create thread to handle the new request
+        pid_t child_pid = fork();
+        
+        // Parent process
+        // if(child_pid > 0)
+        // {
+        //     break;
+        // }
+
+        // Child process
+        if(child_pid == 0)
+        {
+            signal(SIGINT, SIGINT_child);
+            handle_client(accept_fd);
+            // Child process exits
+            close(accept_fd);
+            exit(EXIT_SUCCESS);
+        }
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    start_server(PORT);
+    return 0;
+}

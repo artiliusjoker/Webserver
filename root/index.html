@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<style>
+  body {
+    background-color: #fafafa;
+    display: grid;
+    grid-template-areas:
+      "header header header"
+      "a content b"
+      "footer footer footer";
+    grid-template-rows: 60px 1fr 60px;
+    grid-template-columns: 10% 1fr 15%;
+    grid-gap: 10px;
+    height: 100vh;
+    margin: 0;
+    font-family: Ubuntu, sans-serif;
+  }
+
+  section {
+    padding: 20px;
+  }
+
+  #header {
+    grid-area: header;
+    background-color: #343a40;
+  }
+
+  #header .nav {
+    float: left;
+    margin: 10px;
+    padding: 10px;
+    margin-right: 15%;
+  }
+
+
+  .logo {
+    height: 100%;
+    width: auto;
+    margin-left: 10%;
+  }
+
+  .buttons {
+    background-color: #fafafa;
+    color: rgb(20, 19, 19);
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 2px;
+  }
+
+  .buttons:hover {
+    background-color: #ebe8e8;
+  }
+
+  #content {
+    display: flex;
+    grid-area: content;
+    height: 100%;
+    width: 100%;
+  }
+
+  #info {
+    padding: 20px;
+    margin: 20px;
+    flex: 30%;
+    color: rgb(74, 74, 74);
+  }
+
+  #photo-container {
+    flex: 75%;
+  }
+
+  #wrapper {
+    max-width: 100%;
+    max-height: 100%;
+    position: relative;
+  }
+
+  #wrapper a {
+    position: absolute;
+  }
+
+  #wrapper img {
+    max-width: 100%;
+  }
+</style>
+
+<head>
+  <title>Website test</title>
+  <link rel="icon" href="images/icon.png">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css?family=Ubuntu&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <header id="header">
+    <div class="nav">
+      <a class="buttons" href="index.html">Trang chủ</a>
+      <a class="buttons" href="lienhe.html">Liên hệ</a>
+    </div>
+  </header>
+  <section id="content">
+    <div id="photo-container">
+      <div id="wrapper">
+        <img src="cover.jpg">
+      </div>
+    </div>
+    <div id="info">
+      <li><strong>Tên nhóm: </strong>Chưa có</li>
+      <li><strong>Danh sách thành viên: </strong>
+        <ol>
+          <li>Trương Minh Quân (1712695)</li>
+          <li>Lê Ngọc Phúc (1712695)</li>
+        </ol>
+    </div>
+  </section>
+</body>
+
+</html>

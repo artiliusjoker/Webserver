@@ -11,7 +11,7 @@ static void SIGINT_parent(int signum)
     kill(killall, SIGINT);
 
     while ((wait_retVal = wait(&status)) > 0);
-    fprintf(stdout, "Program terminated by SIGUSR2\n");
+    fprintf(stdout, "Program terminated by CRL-C\n");
     
     close(listening_fd);
     
@@ -39,7 +39,12 @@ static void handle_client(int client_fd)
         fprintf(stderr, "Handling : cannot read client's request ! \n");
         return;
     }
+
+    // Response the website
+
+    // Free
     http_request_free(client_request);
+    fprintf(stdout, "Client's request %s\n", request_in_string);
     free(request_in_string);
 }
 
@@ -88,13 +93,10 @@ static void start_server(char *port)
         }
         break;
     }
-    if(iterator == NULL)
-    {
-        fprintf(stderr, "Server: cannot create socket fd !\n");
-        freeaddrinfo(list);
-        return;
-    }
     freeaddrinfo(list);
+    listening_fd = fd;
+
+
     int accept_fd;
     // Fork process's child to handle clients
     printf("Proxy server is listening on port %s\n", port);

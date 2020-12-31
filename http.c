@@ -310,3 +310,31 @@ void http_response_free(http_custom_response * response)
         response = NULL;
     }
 }
+
+//from Beej's guide
+int send_all_to_socket(int sock_fd, char *buf, int buf_len, int *send_len)
+{
+    int total = 0;        // how many bytes we've sent
+    int bytesleft = buf_len; // how many we have left to send
+    int n;
+
+    while(total < buf_len) {
+        n = send(sock_fd, buf + total, bytesleft, 0);
+        if (n == -1) { break; }
+        total += n;
+        bytesleft -= n;
+    }
+    if(send_len != NULL)
+    {
+        *send_len = total; // return number actually sent here
+    }
+    return n == -1 ? - 1 : 0; // return -1 on failure, 0 on success
+} 
+
+int send_error_response(int error_code, int client_fd)
+{
+    http_custom_response * error_response = http_response_build(error_code);
+    send_all_to_socket(client_fd, error_response->http_header, error_response->header_size, NULL);
+    http_response_free(error_response);
+    return 0;
+}

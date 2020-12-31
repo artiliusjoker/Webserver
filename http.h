@@ -78,4 +78,6 @@ typedef struct r_buf{
 }read_buffer;
 int read_line_socket(read_buffer *, char *, unsigned int);
 
+int send_error_response(int error_code, int client_fd);
+
 #endif

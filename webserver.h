@@ -12,6 +12,5 @@
 #include<netdb.h>
 #include<unistd.h>
 
-#include"file.h"
 #include"constants.h"
 #include"http.h"

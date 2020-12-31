@@ -3,6 +3,7 @@
 
 #include <sys/queue.h>
 #include"constants.h"
+#include"net.h"
 
 enum http_method{
     OPTIONS,
@@ -69,14 +70,6 @@ typedef struct http_custom_response{
 }http_custom_response;
 http_custom_response *http_response_build(int);
 void http_response_free(http_custom_response *);
-
-// Read each line from fd to parse the request
-typedef struct r_buf{
-    char buf[MAX_READ_BUF];
-    unsigned int r_pos, w_pos; // for keeping track of positions when read line
-    unsigned int current_fd;
-}read_buffer;
-int read_line_socket(read_buffer *, char *, unsigned int);
 
 int send_error_response(int error_code, int client_fd);
 

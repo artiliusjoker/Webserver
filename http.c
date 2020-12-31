@@ -231,11 +231,14 @@ http_status_tuple * create_response_tuple(int status_code)
 /* 
     Custom response builder
 */
-http_custom_response *http_response_build(int status_code)
+http_custom_response *http_response_build(int status_code, char* file_name)
 {
     http_custom_response *new_response = (http_custom_response *) calloc(1, sizeof(*new_response));
     new_response->http_header = (char *) malloc(MAX_HTTP_HDR_SIZE);
     new_response->body_content = NULL;
+    new_response->header_size = 0;
+    new_response->total_size = 0;
+
     http_status_tuple * tuple;
     tuple = create_response_tuple(status_code);
     
@@ -245,18 +248,33 @@ http_custom_response *http_response_build(int status_code)
     struct tm tm = *gmtime(&now);
     strftime(date_buf, sizeof(date_buf), "%a, %d %b %Y %H:%M:%S %Z", &tm);
 
+    // Get file
+    char filepath[50];
+    struct file_data *filedata; 
+    char mime_type[20];
+
+    // Get file in byte array
+    snprintf(filepath, sizeof filepath, "%s/%s", SERVER_ROOT, file_name);
+    filedata = file_load(filepath);
+
+    if (filedata == NULL) {
+        fprintf(stderr, "Cannot find system file\n");
+        http_response_free(new_response);
+        free(tuple);
+        return;
+    }
+    strcpy(mime_type, mime_type_get(filepath));
+
     int retVal = snprintf(new_response->http_header, MAX_HTTP_HDR_SIZE, 
                                                             "HTTP/1.1 %s %s\r\n"
                                                             "Date: %s\r\n" // today
                                                             "Cache-Control: no-cache, private\r\n" // no cache
-                                                            "Content-Length: 0\r\n" // body is empty                                              
+                                                            "Content-Length: %d\r\n" // body is empty
+                                                            "Content-Type: %s\r\n" // mime type of file                                              
                                                             "Connection: closed\r\n" // notify the clients to close connection
-                                                            "\r\n", tuple->status_code, tuple->status_name, date_buf);
-    new_response->header_size = strlen(new_response->http_header);
-    if(retVal < 0)
-    {
-        http_response_free(new_response);
-    }
+                                                            "\r\n", tuple->status_code, tuple->status_name, date_buf, filedata->size, mime_type);
+    new_response->header_size = retVal;
+    new_response->body_content = filedata;
     free(tuple);
     return new_response;
 }
@@ -277,7 +295,7 @@ void http_response_free(http_custom_response * response)
 
 int send_error_response(int error_code, int client_fd)
 {
-    http_custom_response * error_response = http_response_build(error_code);
+    http_custom_response * error_response = http_response_build(error_code, NULL);
     send_all_to_socket(client_fd, error_response->http_header, error_response->header_size, NULL);
     http_response_free(error_response);
     return 0;

@@ -65,9 +65,10 @@ typedef enum http_response_code{
 typedef struct http_custom_response{
     char *http_header;
     int header_size;
+    int total_size;
     struct file_data * body_content
 }http_custom_response;
-http_custom_response *http_response_build(int);
+http_custom_response *http_response_build(int, char*);
 void http_response_free(http_custom_response *);
 
 int send_error_response(int error_code, int client_fd);

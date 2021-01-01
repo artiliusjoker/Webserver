@@ -34,27 +34,18 @@ static void handle_client(int client_fd)
     client_request = http_read_request(client_fd, &request_in_string);
     if(client_request == NULL)
     {
-        send_error_response(BAD_REQUEST, client_fd);
-
         fprintf(stderr, "Handling : cannot read client's request ! \n");
         return;
     }
 
-    // Response the website
+    // Build the http response
     http_custom_response* response = http_response_build(OK, client_request->search_path);
-    if(response->body_content == NULL)
-    {
-        // Send the response to client
-        send_all_to_socket(client_fd, response->http_header, response->header_size, NULL);
-    }
-    else
-    {
-        // Store response in char array
-        char response_in_char[MAX_RESPONSE_SIZE];
-        snprintf(response_in_char, MAX_RESPONSE_SIZE, "%s%s", response->http_header, (char*)response->body_content->data);
-        // Send the response to client
-        send_all_to_socket(client_fd, response_in_char, response->total_size, NULL);
-    }
+    // Store response in char array
+    char response_in_char[MAX_RESPONSE_SIZE];
+    snprintf(response_in_char, MAX_RESPONSE_SIZE, "%s%s", response->http_header, (char*)response->body_content->data);
+    // Send the response to client
+    send_all_to_socket(client_fd, response_in_char, response->total_size, NULL);
+    
     // Free
     http_request_free(client_request);
     http_response_free(response);

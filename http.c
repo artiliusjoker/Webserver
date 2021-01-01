@@ -267,11 +267,15 @@ http_custom_response *http_response_build(int status_code, char* file_name)
     // Get file in byte array
     filedata = file_load(file_name);
 
+    http_status_tuple * tuple;
+    tuple = create_response_tuple(status_code);
     // File not exists in root, send 404 response
     if (filedata == NULL) {
         http_custom_response * error_response;
         error_response = http_error_response_builder(NOT_FOUND);
-        return error_response;
+        free(tuple);
+        tuple = create_response_tuple(NOT_FOUND);
+        filedata = file_load("404.html");
     }
     // MIME type
     strcpy(mime_type, mime_type_get(filedata->filepath));
@@ -283,9 +287,6 @@ http_custom_response *http_response_build(int status_code, char* file_name)
     new_response->header_size = 0;
     new_response->total_size = 0;
 
-    http_status_tuple * tuple;
-    tuple = create_response_tuple(status_code);
-    
     // current system date
     char date_buf[50];
     time_t now = time(0);

@@ -15,7 +15,9 @@ struct file_data *file_load(char *filename)
     struct stat buf;
     int bytes_read, bytes_remaining, total_bytes = 0;
     char filepath[50];
-    if(filename[0] == '/')
+
+    int file_name_len = strlen(filename);
+    if(filename[0] == '/' && file_name_len == 1)
     {
         snprintf(filepath, sizeof filepath, "%s/%s", SERVER_ROOT, "index.html");
     }
@@ -24,7 +26,7 @@ struct file_data *file_load(char *filename)
         snprintf(filepath, sizeof filepath, "%s/%s", SERVER_ROOT, filename);
     }
     // Get the file size
-    if (stat(filename, &buf) == -1) {
+    if (stat(filepath, &buf) == -1) {
         return NULL;
     }
 
@@ -34,7 +36,7 @@ struct file_data *file_load(char *filename)
     }
 
     // Open the file for reading
-    FILE *fp = fopen(filename, "rb");
+    FILE *fp = fopen(filepath, "rb");
 
     if (fp == NULL) {
         return NULL;

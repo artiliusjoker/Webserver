@@ -223,10 +223,60 @@ http_status_tuple * create_response_tuple(int status_code)
 }
 
 /* 
-    HTTP response builder, header and body(files)
+    HTTP response builder, only header
+*/
+static http_custom_response *http_error_response_builder(int status_code)
+{
+    // initialize
+    http_custom_response *new_response = (http_custom_response *) calloc(1, sizeof(*new_response));
+    new_response->http_header = (char *) malloc(MAX_HTTP_HDR_SIZE);
+    new_response->body_content = NULL;
+    new_response->header_size = 0;
+    new_response->total_size = 0;
+
+    http_status_tuple * tuple;
+    tuple = create_response_tuple(status_code);
+    
+    // Current system date
+    char date_buf[50];
+    time_t now = time(0);
+    struct tm tm = *gmtime(&now);
+    strftime(date_buf, sizeof(date_buf), "%a, %d %b %Y %H:%M:%S %Z", &tm);
+
+    // Create the header
+    int hdr_size = snprintf(new_response->http_header, MAX_HTTP_HDR_SIZE, 
+                                                            "HTTP/1.1 %s %s\r\n"
+                                                            "Date: %s\r\n" // today
+                                                            "Cache-Control: no-cache, private\r\n" // no cache
+                                                            "Content-Length: 0\r\n" // body is empty
+                                                            "Connection: closed\r\n" // notify the clients to close connection
+                                                            "\r\n", tuple->status_code, tuple->status_name, date_buf);
+    new_response->header_size = hdr_size;
+    new_response->total_size = hdr_size;
+}
+
+/* 
+    HTTP response builder, header and body
 */
 http_custom_response *http_response_build(int status_code, char* file_name)
 {
+    // Get file
+    struct file_data *filedata; 
+    char mime_type[20];
+
+    // Get file in byte array
+    filedata = file_load(file_name);
+
+    // File not exists in root, send 404 response
+    if (filedata == NULL) {
+        http_custom_response * error_response;
+        error_response = http_error_response_builder(NOT_FOUND);
+        return error_response;
+    }
+    // MIME type
+    strcpy(mime_type, mime_type_get(filedata->filepath));
+
+    // Create response with body
     http_custom_response *new_response = (http_custom_response *) calloc(1, sizeof(*new_response));
     new_response->http_header = (char *) malloc(MAX_HTTP_HDR_SIZE);
     new_response->body_content = NULL;
@@ -241,21 +291,7 @@ http_custom_response *http_response_build(int status_code, char* file_name)
     time_t now = time(0);
     struct tm tm = *gmtime(&now);
     strftime(date_buf, sizeof(date_buf), "%a, %d %b %Y %H:%M:%S %Z", &tm);
-
-    // Get file
-    struct file_data *filedata; 
-    char mime_type[20];
-
-    // Get file in byte array
-    filedata = file_load(file_name);
-
-    if (filedata == NULL) {
-        http_response_free(new_response);
-        free(tuple);
-        return new_response;
-    }
-    strcpy(mime_type, mime_type_get(filedata->filepath));
-
+    // Create header
     int hdr_size = snprintf(new_response->http_header, MAX_HTTP_HDR_SIZE, 
                                                             "HTTP/1.1 %s %s\r\n"
                                                             "Date: %s\r\n" // today
@@ -283,12 +319,4 @@ void http_response_free(http_custom_response * response)
         free(response);
         response = NULL;
     }
-}
-
-int send_error_response(int error_code, int client_fd)
-{
-    http_custom_response * error_response = http_response_build(error_code, NULL);
-    send_all_to_socket(client_fd, error_response->http_header, error_response->header_size, NULL);
-    http_response_free(error_response);
-    return 0;
 }

@@ -77,6 +77,4 @@ typedef struct http_custom_response{
 http_custom_response *http_response_build(int, char*);
 void http_response_free(http_custom_response *);
 
-int send_error_response(int error_code, int client_fd);
-
 #endif

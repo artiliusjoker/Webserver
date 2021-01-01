@@ -1,6 +1,12 @@
 #ifndef HTTP_H
 #define HTTP_H
 
+#include <time.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/queue.h>
 #include"constants.h"
 #include"net.h"

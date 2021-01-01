@@ -4,6 +4,7 @@
 struct file_data {
     int size;
     void *data;
+    char filepath[50];
 };
 
 extern struct file_data *file_load(char *filename);

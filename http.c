@@ -1,10 +1,4 @@
 #include "http.h"
-#include <time.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 
 const int http_methods__arr_len = UNKNOWN - OPTIONS;
 const char *http_methods_array[] = {
@@ -229,7 +223,7 @@ http_status_tuple * create_response_tuple(int status_code)
 }
 
 /* 
-    Custom response builder
+    HTTP response builder, header and body(files)
 */
 http_custom_response *http_response_build(int status_code, char* file_name)
 {
@@ -249,21 +243,18 @@ http_custom_response *http_response_build(int status_code, char* file_name)
     strftime(date_buf, sizeof(date_buf), "%a, %d %b %Y %H:%M:%S %Z", &tm);
 
     // Get file
-    char filepath[50];
     struct file_data *filedata; 
     char mime_type[20];
 
     // Get file in byte array
-    snprintf(filepath, sizeof filepath, "%s/%s", SERVER_ROOT, file_name);
-    filedata = file_load(filepath);
+    filedata = file_load(file_name);
 
     if (filedata == NULL) {
-        fprintf(stderr, "Cannot find system file\n");
         http_response_free(new_response);
         free(tuple);
         return new_response;
     }
-    strcpy(mime_type, mime_type_get(filepath));
+    strcpy(mime_type, mime_type_get(filedata->filepath));
 
     int hdr_size = snprintf(new_response->http_header, MAX_HTTP_HDR_SIZE, 
                                                             "HTTP/1.1 %s %s\r\n"

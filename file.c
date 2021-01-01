@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include "file.h"
-
+#include "constants.h"
 /**
  * Loads a file into memory and returns a pointer to the data.
  * 
@@ -13,7 +14,15 @@ struct file_data *file_load(char *filename)
     char *buffer, *p;
     struct stat buf;
     int bytes_read, bytes_remaining, total_bytes = 0;
-
+    char filepath[50];
+    if(filename[0] == '/')
+    {
+        snprintf(filepath, sizeof filepath, "%s/%s", SERVER_ROOT, "index.html");
+    }
+    else
+    {
+        snprintf(filepath, sizeof filepath, "%s/%s", SERVER_ROOT, filename);
+    }
     // Get the file size
     if (stat(filename, &buf) == -1) {
         return NULL;
@@ -61,7 +70,7 @@ struct file_data *file_load(char *filename)
 
     filedata->data = buffer;
     filedata->size = total_bytes;
-
+    strcpy(filedata->filepath, filepath);
     return filedata;
 }
 

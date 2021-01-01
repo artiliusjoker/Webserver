@@ -41,10 +41,18 @@ static void handle_client(int client_fd)
     }
 
     // Response the website
+    http_custom_response* response = http_response_build(OK, "index.html");
+    char response_in_char[MAX_RESPONSE_SIZE];
+    snprintf(response_in_char, MAX_RESPONSE_SIZE, "%s%s", response->http_header, (char*)response->body_content->data);
+    // fprintf(stdout, "%d %d\n", response->header_size, response->total_size);
+    fprintf(stdout, "%s\n", client_request->search_path);
+
+    // Send the response to client
+    send_all_to_socket(client_fd, response_in_char, response->total_size, NULL);
 
     // Free
     http_request_free(client_request);
-    fprintf(stdout, "Client's request %s\n", request_in_string);
+    http_response_free(response);
     free(request_in_string);
 }
 

@@ -52,7 +52,7 @@ struct file_data *file_load(char *filename)
     }
 
     // Allocate the file data struct
-    struct file_data *filedata = malloc(sizeof *filedata);
+    struct file_data *filedata = malloc(sizeof(*filedata));
 
     if (filedata == NULL) {
         free(buffer);

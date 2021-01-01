@@ -261,11 +261,11 @@ http_custom_response *http_response_build(int status_code, char* file_name)
         fprintf(stderr, "Cannot find system file\n");
         http_response_free(new_response);
         free(tuple);
-        return;
+        return new_response;
     }
     strcpy(mime_type, mime_type_get(filepath));
 
-    int retVal = snprintf(new_response->http_header, MAX_HTTP_HDR_SIZE, 
+    int hdr_size = snprintf(new_response->http_header, MAX_HTTP_HDR_SIZE, 
                                                             "HTTP/1.1 %s %s\r\n"
                                                             "Date: %s\r\n" // today
                                                             "Cache-Control: no-cache, private\r\n" // no cache
@@ -273,8 +273,9 @@ http_custom_response *http_response_build(int status_code, char* file_name)
                                                             "Content-Type: %s\r\n" // mime type of file                                              
                                                             "Connection: closed\r\n" // notify the clients to close connection
                                                             "\r\n", tuple->status_code, tuple->status_name, date_buf, filedata->size, mime_type);
-    new_response->header_size = retVal;
+    new_response->header_size = hdr_size;
     new_response->body_content = filedata;
+    new_response->total_size = hdr_size + filedata->size + 1;
     free(tuple);
     return new_response;
 }

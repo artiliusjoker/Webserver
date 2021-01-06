@@ -37,14 +37,25 @@ static void handle_client(int client_fd)
         fprintf(stderr, "Handling : cannot read client's request ! \n");
         return;
     }
-
+    
     // Build the http response
     http_custom_response* response = http_response_build(OK, client_request->search_path);
-    // Store response in char array
-    char response_in_char[MAX_RESPONSE_SIZE];
-    snprintf(response_in_char, MAX_RESPONSE_SIZE, "%s%s", response->http_header, (char*)response->body_content->data);
-    // Send the response to client
-    send_all_to_socket(client_fd, response_in_char, response->total_size, NULL);
+    printf("%s", response->http_header);
+
+    if(response != NULL)
+    {
+        // Send the http header
+        send_all_to_socket(client_fd, response->http_header, response->header_size + 1, NULL);
+        // Send the file
+        send_all_to_socket(client_fd, response->body_content->data, response->body_content->size, NULL);
+    }
+    // // Send all in an array
+    // char response_buffer[MAX_RESPONSE_SIZE];
+    // snprintf(response_buffer, MAX_RESPONSE_SIZE, "%s%s", response->http_header, response->body_content->data);
+    // // memcpy(response_buffer, response->http_header, response->header_size);
+    // // memcpy(response_buffer + response->header_size, response->body_content->data, response->body_content->size);
+    // // Send the response to client
+    // send_all_to_socket(client_fd, response_buffer, response->total_size, NULL);
     
     // Free
     http_request_free(client_request);
@@ -103,7 +114,7 @@ static void start_server(char *port)
 
     int accept_fd;
     // Fork process's child to handle clients
-    printf("Proxy server is listening on port %s\n", port);
+    printf("Web server is listening on port %s, make connections by browsers or curl cmd\n", port);
     // Program loop
     while(1)
     {

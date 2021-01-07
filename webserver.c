@@ -1,19 +1,19 @@
 #include <arpa/inet.h>
 
-#include<errno.h>
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<signal.h>
-#include<sys/types.h>
-#include<sys/socket.h>
-#include<sys/wait.h> 
-#include<netinet/in.h>
-#include<netdb.h>
-#include<unistd.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <unistd.h>
 
-#include"constants.h"
-#include"http.h"
+#include "constants.h"
+#include "http.h"
 
 int listening_fd;
 
@@ -27,10 +27,11 @@ static void SIGINT_parent(int signum)
     kill(killall, SIGINT);
 
     while ((wait_retVal = wait(&status)) > 0);
+
     fprintf(stdout, "Program terminated by CRL-C\n");
-    
+
     close(listening_fd);
-    
+
     exit(EXIT_SUCCESS);
 }
 
@@ -42,41 +43,35 @@ static void SIGINT_child(int signum)
 
 static void handle_client(int client_fd)
 {
-    int server_fd, retVal;
-    http_request *client_request = NULL;
-    char * request_in_string;
-
-    // Read client's request
-    client_request = http_read_request(client_fd, &request_in_string);
-    if(client_request == NULL)
+    while (1)
     {
-        fprintf(stderr, "Handling : cannot read client's request ! \n");
-        return;
-    }
-    
-    // Build the http response
-    http_custom_response* response = http_response_build(OK, client_request->search_path);
-    fprintf(stdin, "%s", response->http_header);
+        int server_fd, retVal;
+        http_request *client_request = NULL;
+        char *request_in_string;
 
-    if(response != NULL)
-    {
-        // Send the http header
-        send_all_to_socket(client_fd, response->http_header, response->header_size, NULL);
-        // Send the file
-        send_all_to_socket(client_fd, response->body_content->data, response->body_content->size, NULL);
-    }
+        // Read client's request
+        client_request = http_read_request(client_fd, &request_in_string);
+        if (client_request == NULL)
+        {
+            return;
+        }
 
-    // // Send all in an array
-    // char response_buffer[MAX_RESPONSE_SIZE];
-    // memcpy(response_buffer, response->http_header, response->header_size);
-    // memcpy(response_buffer + response->header_size, response->body_content->data, response->body_content->size);
-    // // Send the response to client
-    // send_all_to_socket(client_fd, response_buffer, response->total_size, NULL);
-    
-    // Free
-    http_request_free(client_request);
-    http_response_free(response);
-    free(request_in_string);
+        // Build the http response
+        http_custom_response *response = http_response_build(OK, client_request->search_path);
+
+        if (response != NULL)
+        {
+            // Send the http header
+            send_all_to_socket(client_fd, response->http_header, response->header_size, NULL);
+            // Send the file
+            send_all_to_socket(client_fd, response->body_content->data, response->body_content->size, NULL);
+        }
+
+        // Free
+        http_request_free(client_request);
+        http_response_free(response);
+        free(request_in_string);
+    }
 }
 
 static void start_server(char *port)
@@ -87,37 +82,37 @@ static void start_server(char *port)
 
     // Allocate mem for result
     memset(&result, 0, sizeof(result));
-    result.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+    result.ai_family = AF_UNSPEC;     /* Allow IPv4 or IPv6 */
     result.ai_socktype = SOCK_STREAM; /* Datagram socket */
     result.ai_flags = AI_PASSIVE;
 
     int retVal = getaddrinfo(NULL, port, &result, &list);
-    if (retVal != 0) 
+    if (retVal != 0)
     {
         fprintf(stderr, "Getaddrinfo: %s\n", gai_strerror(retVal));
         exit(EXIT_FAILURE);
     }
     struct addrinfo *iterator = list;
-    if(iterator == NULL)
+    if (iterator == NULL)
     {
         fprintf(stderr, "Server: cannot create socket fd !\n");
         return;
     }
     // Go through the list to create socket fd
-    for(iterator; iterator != NULL; iterator = iterator->ai_next)
+    for (iterator; iterator != NULL; iterator = iterator->ai_next)
     {
-        if((fd = socket(iterator->ai_family, iterator->ai_socktype,
-                        iterator->ai_protocol)) < 0)
+        if ((fd = socket(iterator->ai_family, iterator->ai_socktype,
+                         iterator->ai_protocol)) < 0)
         {
             continue;
         }
-        if(bind(fd, iterator->ai_addr, iterator->ai_addrlen) < 0)
+        if (bind(fd, iterator->ai_addr, iterator->ai_addrlen) < 0)
         {
             close(fd);
             continue;
         }
         // Prepare for connections
-        if(listen(fd, MAX_REQUESTS_QUEUE_SIZE) < 0)
+        if (listen(fd, MAX_REQUESTS_QUEUE_SIZE) < 0)
         {
             close(fd);
             continue;
@@ -127,23 +122,26 @@ static void start_server(char *port)
     freeaddrinfo(list);
     listening_fd = fd;
 
-
     int accept_fd;
     // Fork process's child to handle clients
     printf("Web server is listening on port %s, make connections by browsers or curl cmd\n", port);
     // Program loop
-    while(1)
+    while (1)
     {
         accept_fd = accept(fd, NULL, NULL);
-        if(accept_fd == -1)
+        if (accept_fd == -1)
         {
-            perror("Server: ");
-            continue;
+            perror("Server");
+            printf("Restart the program...\n");
+            break;
         }
         printf("Received connection\n");
+        struct timeval tv;
+        tv.tv_sec = 2;
+        setsockopt(accept_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
         // Create thread to handle the new request
         pid_t child_pid = fork();
-        
+
         // Parent process
         // if(child_pid > 0)
         // {
@@ -151,7 +149,7 @@ static void start_server(char *port)
         // }
 
         // Child process
-        if(child_pid == 0)
+        if (child_pid == 0)
         {
             signal(SIGINT, SIGINT_child);
             handle_client(accept_fd);

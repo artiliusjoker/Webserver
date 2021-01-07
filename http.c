@@ -17,17 +17,26 @@ static void http_request_print(http_request *req);
 
 http_request *http_read_request(int sockfd, char** request_result)
 {
-	http_request *new_request = (http_request *) malloc(sizeof(http_request));
-    new_request->method = 0; 
-    TAILQ_INIT(&new_request->metadata_head);
-
+	
+    // Init buffer
     char buffer[MAX_LINE_BUF];
     read_buffer *rbuf;
     rbuf = calloc(1, sizeof(*rbuf));
     rbuf->current_fd = sockfd;
     
     // First line -> get METHOD, URL, VERSION
-    read_line_socket(rbuf, buffer, MAX_LINE_BUF);
+    int retVal = read_line_socket(rbuf, buffer, MAX_LINE_BUF);
+    if(retVal <= 0)
+    {
+        free(rbuf);
+        return NULL;
+    }
+
+    // Init request
+    http_request *new_request = (http_request *) malloc(sizeof(http_request));
+    new_request->method = 0; 
+    TAILQ_INIT(&new_request->metadata_head);
+
     char* token = NULL;
     char* copy, *pointer_copy;
 

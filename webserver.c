@@ -40,20 +40,20 @@ static void handle_client(int client_fd)
     
     // Build the http response
     http_custom_response* response = http_response_build(OK, client_request->search_path);
-    printf("%s", response->http_header);
+    fprintf(stdin, "%s", response->http_header);
 
     if(response != NULL)
     {
         // Send the http header
-        send_all_to_socket(client_fd, response->http_header, response->header_size + 1, NULL);
+        send_all_to_socket(client_fd, response->http_header, response->header_size, NULL);
         // Send the file
         send_all_to_socket(client_fd, response->body_content->data, response->body_content->size, NULL);
     }
+
     // // Send all in an array
     // char response_buffer[MAX_RESPONSE_SIZE];
-    // snprintf(response_buffer, MAX_RESPONSE_SIZE, "%s%s", response->http_header, response->body_content->data);
-    // // memcpy(response_buffer, response->http_header, response->header_size);
-    // // memcpy(response_buffer + response->header_size, response->body_content->data, response->body_content->size);
+    // memcpy(response_buffer, response->http_header, response->header_size);
+    // memcpy(response_buffer + response->header_size, response->body_content->data, response->body_content->size);
     // // Send the response to client
     // send_all_to_socket(client_fd, response_buffer, response->total_size, NULL);
     

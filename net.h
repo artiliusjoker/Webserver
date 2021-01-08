@@ -1,15 +1,6 @@
 #ifndef _NET_H_
 #define _NET_H_
 
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <unistd.h>
-
 #include "constants.h"
 
 // Send whole buffer to socket

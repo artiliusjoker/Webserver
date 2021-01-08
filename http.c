@@ -1,3 +1,14 @@
+#include <time.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include"constants.h"
+#include"net.h"
+#include"file.h"
+#include"mime.h"
 #include "http.h"
 
 const int http_methods__arr_len = UNKNOWN - OPTIONS;
@@ -270,15 +281,21 @@ http_custom_response *http_response_build(int status_code, char* file_name)
     time_t now = time(0);
     struct tm tm = *gmtime(&now);
     strftime(date_buf, sizeof(date_buf), "%a, %d %b %Y %H:%M:%S %Z", &tm);
+
+    // current machine ip
+    char * host_ip = get_host_ip();
+
     // Create header
     int hdr_size = snprintf(new_response->http_header, MAX_HTTP_HDR_SIZE, 
                                                             "HTTP/1.1 %s %s\r\n"
                                                             "Date: %s\r\n" // today
+                                                            "Set-Cookie: SERVERID=%s\r\n" // Cookie 
                                                             "Cache-Control: no-cache, private\r\n" // no cache
                                                             "Content-Length: %d\r\n" // body is empty
                                                             "Content-Type: %s\r\n" // mime type of file                                              
                                                             "Connection: closed\r\n" // notify the clients to close connection
-                                                            "\r\n", tuple->status_code, tuple->status_name, date_buf, filedata->size, mime_type);
+                                                            "\r\n", tuple->status_code, tuple->status_name, date_buf, host_ip, filedata->size, mime_type);
+    free(host_ip);
     new_response->header_size = hdr_size;
     new_response->body_content = filedata;
     new_response->total_size = hdr_size + filedata->size;

@@ -14,6 +14,8 @@
 
 #include "constants.h"
 #include "http.h"
+#include "file.h"
+#include "net.h"
 
 int listening_fd;
 
@@ -55,7 +57,7 @@ static void handle_client(int client_fd)
         {
             return;
         }
-
+        printf("%s\n", request_in_string);
         // Build the http response
         http_custom_response *response = http_response_build(OK, client_request->search_path);
 

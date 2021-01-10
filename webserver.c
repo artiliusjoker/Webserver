@@ -46,33 +46,35 @@ static void SIGINT_child(int signum)
 
 static void handle_client(int client_fd)
 {
-    
-    int server_fd, retVal;
-    http_request *client_request = NULL;
-    char *request_in_string;
-
-    // Read client's request
-    client_request = http_read_request(client_fd, &request_in_string);
-    if (client_request == NULL)
+    while (1)
     {
-        return;
-    }
-    printf("%s\n", request_in_string);
-    // Build the http response
-    http_custom_response *response = http_response_build(OK, client_request->search_path);
+        int server_fd, retVal;
+        http_request *client_request = NULL;
+        char *request_in_string;
 
-    if (response != NULL)
-    {
-        // Send the http header
-        send_all_to_socket(client_fd, response->http_header, response->header_size, NULL);
-        // Send the file
-        send_all_to_socket(client_fd, response->body_content->data, response->body_content->size, NULL);
-    }
+        // Read client's request
+        client_request = http_read_request(client_fd, &request_in_string);
+        if (client_request == NULL)
+        {
+            return;
+        }
+        printf("%s\n", request_in_string);
+        // Build the http response
+        http_custom_response *response = http_response_build(OK, client_request->search_path);
 
-    // Free
-    http_request_free(client_request);
-    http_response_free(response);
-    free(request_in_string);
+        if (response != NULL)
+        {
+            // Send the http header
+            send_all_to_socket(client_fd, response->http_header, response->header_size, NULL);
+            // Send the file
+            send_all_to_socket(client_fd, response->body_content->data, response->body_content->size, NULL);
+        }
+
+        // Free
+        http_request_free(client_request);
+        http_response_free(response);
+        free(request_in_string);
+    }
 }
 
 static void start_server(char *port)
@@ -143,7 +145,8 @@ static void start_server(char *port)
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
     {
         perror("Server-setsockopt()");
-        exit(1);
+        printf("Wait a few seconds for port 80 available again :)\n");
+        exit(EXIT_FAILURE);
     }
     int i, j;
     // Main loop
@@ -155,7 +158,8 @@ static void start_server(char *port)
         if (select(fd_max + 1, &read_fds, NULL, NULL, NULL) == -1)
         {
             perror("Server-select()");
-            exit(1);
+            printf("Wait a few seconds for port 80 available again :)\n");
+            exit(EXIT_FAILURE);
         }
         // New connections
         for (i = 0; i <= fd_max; i++)
@@ -170,6 +174,8 @@ static void start_server(char *port)
                     if ((accept_fd = accept(fd, NULL, NULL)) == -1)
                     {
                         perror("Server-accept()");
+                        printf("Wait a few seconds for port 80 available again :)\n");
+                        exit(EXIT_FAILURE);
                     }
                     else
                     {
@@ -234,7 +240,7 @@ int main(int argc, char *argv[])
     // Check superuser to use port 80
     if (getuid() && geteuid())
     {
-        printf("You don't have superuser privileges !\n");
+        printf("Please use root account or user with superuser privileges to open port 80 :)\n");
         exit(EXIT_FAILURE);
     }
     start_server(PORT);

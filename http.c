@@ -293,7 +293,8 @@ http_custom_response *http_response_build(int status_code, char* file_name)
                                                             "Cache-Control: no-cache, private\r\n" // no cache
                                                             "Content-Length: %d\r\n" // body is empty
                                                             "Content-Type: %s\r\n" // mime type of file                                              
-                                                            "Connection: keep-alive\r\n" // notify the clients to close connection
+                                                            "Connection: keep-alive\r\n" // notify the clients to keep connection
+                                                            "Keep-Alive: timeout=2, max=5\r\n"
                                                             "\r\n", tuple->status_code, tuple->status_name, date_buf, host_ip, filedata->size, mime_type);
     free(host_ip);
     new_response->header_size = hdr_size;
